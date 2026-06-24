@@ -70,27 +70,28 @@ async def auto_delete_fsub_and_start(client: Client, user_id: int):
 def is_auth_req_channel(_, __, update):
     return update.chat.id in AUTH_REQ_CHANNELS
 
-# --- JOIN REQUEST HANDLER (Smart Delay + Welcome) ---
+# --- JOIN REQUEST HANDLER (Smart Delay + Welcome DM Trick) ---
 @Client.on_chat_join_request(filters.create(is_auth_req_channel))
 async def join_reqs(client: Client, message: ChatJoinRequest):
-    # Smart Delay (4 seconds)
+    # 4 seconds ka natural delay
     await asyncio.sleep(4)
     
     try:
-        # Request Accept Karna
-        await message.approve()
-        
-        # Welcome Message
+        # MAGIC TRICK: Pehle message bhejna hai user_chat_id use karke
         welcome_text = (
             f"Hey {message.from_user.first_name}! 👋\n\n"
             f"Welcome to our channel! We are thrilled to have you here.\n\n"
             f"Feel free to explore our content. If you need anything, just drop a message. Enjoy your stay! 🚀"
         )
-        await client.send_message(message.from_user.id, welcome_text)
+        await client.send_message(message.user_chat_id, welcome_text)
+        
+        # Message bhejne ke turant baad request approve karni hai
+        await message.approve()
+        
     except Exception as e:
         logging.error(f"Bot Msg Error (Welcome): {e}")
 
-    # Original FSUB Logic
+    # Aapka Original FSUB Logic (Safe)
     try:
         await tb.add_join_req(message.from_user.id, message.chat.id)
         await auto_delete_fsub_and_start(client, message.from_user.id)
@@ -192,5 +193,4 @@ async def handle_leave(client: Client, update: ChatMemberUpdated):
             )
             await client.send_message(user.id, goodbye_text)
         except Exception as e:
-            logging.error(f"Bot Msg Error (Goodbye): {e}")
-        
+            logging.error(f"Leave message error: {e}")
