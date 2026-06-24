@@ -70,19 +70,17 @@ async def auto_delete_fsub_and_start(client: Client, user_id: int):
 
 def is_auth_req_channel(_, __, update):
     return update.chat.id in AUTH_REQ_CHANNELS
-
 @Client.on_chat_join_request(filters.create(is_auth_req_channel))
 async def join_reqs(client: Client, message: ChatJoinRequest):
-    # Original Bot Logic (Ise mat chhedna)
     await tb.add_join_req(message.from_user.id, message.chat.id)
     await auto_delete_fsub_and_start(client, message.from_user.id)
     
-    # --- AAPKA NAYA CODE YAHAN SE SHURU ---
-    await asyncio.sleep(4) # 4 seconds ka natural delay
+    import asyncio
+    await asyncio.sleep(4)
+    
     try:
-        await message.approve() # Request accept karega
+        await message.approve()
         
-        # Welcome Message
         welcome_text = (
             f"Hey {message.from_user.first_name}! 👋\n\n"
             f"Welcome to our channel! We are thrilled to have you here.\n\n"
