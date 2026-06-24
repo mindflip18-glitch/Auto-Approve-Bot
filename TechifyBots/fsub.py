@@ -172,3 +172,18 @@ async def global_fsub_checker(client: Client, message: Message):
         return
     if not await get_fsub(client, message):
         raise StopPropagation
+# --- AAPKA LEAVE HANDLER (Goodbye Message) ---
+@Client.on_chat_member_updated()
+async def handle_leave(client: Client, update: ChatMemberUpdated):
+    # Check karna ki user left hua hai ya nahi
+    if update.new_chat_member and update.new_chat_member.status == ChatMemberStatus.LEFT:
+        user = update.new_chat_member.user
+        try:
+            goodbye_text = (
+                f"Hey {user.first_name}, we noticed you left the channel. 😔\n\n"
+                f"We hate to see you go! You're always welcome back anytime. Take care! 🌟"
+            )
+            await client.send_message(user.id, goodbye_text)
+        except Exception as e:
+            print(f"Leave message error: {e}")
+            
