@@ -71,9 +71,25 @@ def is_auth_req_channel(_, __, update):
 
 @Client.on_chat_join_request(filters.create(is_auth_req_channel))
 async def join_reqs(client: Client, message: ChatJoinRequest):
+    # Original Bot Logic (Ise mat chhedna)
     await tb.add_join_req(message.from_user.id, message.chat.id)
     await auto_delete_fsub_and_start(client, message.from_user.id)
-
+    
+    # --- AAPKA NAYA CODE YAHAN SE SHURU ---
+    await asyncio.sleep(4) # 4 seconds ka natural delay
+    try:
+        await message.approve() # Request accept karega
+        
+        # Welcome Message
+        welcome_text = (
+            f"Hey {message.from_user.first_name}! 👋\n\n"
+            f"Welcome to our channel! We are thrilled to have you here.\n\n"
+            f"Feel free to explore our content. If you need anything, just drop a message. Enjoy your stay! 🚀"
+        )
+        await client.send_message(message.from_user.id, welcome_text)
+    except Exception as e:
+        print(f"Error in approve/welcome: {e}")
+        
 @Client.on_chat_member_updated(filters.chat(AUTH_CHANNELS))
 async def check_normal_join(client: Client, message: ChatMemberUpdated):
     if message.from_user and message.new_chat_member and message.new_chat_member.status in [enums.ChatMemberStatus.MEMBER, enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]:
