@@ -5,7 +5,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram import Client, filters, StopPropagation, enums
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ChatJoinRequest, ChatMemberUpdated
 from pyrogram.errors import UserNotParticipant, ChatAdminRequired
-from pyrogram.enums import ChatMemberStatus
 from config import AUTH_CHANNELS, AUTH_REQ_CHANNELS, ADMIN, DB_URI, DB_NAME, IS_FSUB, FSUB_EXPIRE
 
 class TechifyBots:
@@ -70,17 +69,18 @@ async def auto_delete_fsub_and_start(client: Client, user_id: int):
 
 def is_auth_req_channel(_, __, update):
     return update.chat.id in AUTH_REQ_CHANNELS
+
+# --- JOIN REQUEST HANDLER (Smart Delay + Welcome) ---
 @Client.on_chat_join_request(filters.create(is_auth_req_channel))
 async def join_reqs(client: Client, message: ChatJoinRequest):
-    await tb.add_join_req(message.from_user.id, message.chat.id)
-    await auto_delete_fsub_and_start(client, message.from_user.id)
-    
-    import asyncio
+    # Smart Delay (4 seconds)
     await asyncio.sleep(4)
     
     try:
+        # Request Accept Karna
         await message.approve()
         
+        # Welcome Message
         welcome_text = (
             f"Hey {message.from_user.first_name}! 👋\n\n"
             f"Welcome to our channel! We are thrilled to have you here.\n\n"
@@ -88,8 +88,15 @@ async def join_reqs(client: Client, message: ChatJoinRequest):
         )
         await client.send_message(message.from_user.id, welcome_text)
     except Exception as e:
-        print(f"Error in approve/welcome: {e}")
-        
+        logging.error(f"Bot Msg Error (Welcome): {e}")
+
+    # Original FSUB Logic
+    try:
+        await tb.add_join_req(message.from_user.id, message.chat.id)
+        await auto_delete_fsub_and_start(client, message.from_user.id)
+    except Exception as e:
+        logging.error(f"FSUB Logic Error: {e}")
+
 @Client.on_chat_member_updated(filters.chat(AUTH_CHANNELS))
 async def check_normal_join(client: Client, message: ChatMemberUpdated):
     if message.from_user and message.new_chat_member and message.new_chat_member.status in [enums.ChatMemberStatus.MEMBER, enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]:
@@ -172,11 +179,11 @@ async def global_fsub_checker(client: Client, message: Message):
         return
     if not await get_fsub(client, message):
         raise StopPropagation
-# --- AAPKA LEAVE HANDLER (Goodbye Message) ---
+
+# --- LEAVE HANDLER (Goodbye Message) ---
 @Client.on_chat_member_updated()
 async def handle_leave(client: Client, update: ChatMemberUpdated):
-    # Check karna ki user left hua hai ya nahi
-    if update.new_chat_member and update.new_chat_member.status == ChatMemberStatus.LEFT:
+    if update.new_chat_member and update.new_chat_member.status == enums.ChatMemberStatus.LEFT:
         user = update.new_chat_member.user
         try:
             goodbye_text = (
@@ -185,5 +192,5 @@ async def handle_leave(client: Client, update: ChatMemberUpdated):
             )
             await client.send_message(user.id, goodbye_text)
         except Exception as e:
-            print(f"Leave message error: {e}")
-            
+            logging.error(f"Bot Msg Error (Goodbye): {e}")
+        
