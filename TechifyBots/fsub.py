@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram import Client, filters, StopPropagation, enums
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, ChatJoinRequest, ChatMemberUpdated
 from pyrogram.errors import UserNotParticipant, ChatAdminRequired
+from pyrogram.enums import ChatMemberStatus
 from config import AUTH_CHANNELS, AUTH_REQ_CHANNELS, ADMIN, DB_URI, DB_NAME, IS_FSUB, FSUB_EXPIRE
 
 class TechifyBots:
